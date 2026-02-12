@@ -270,7 +270,7 @@ func initServices(cfg *config.Config, blockchains map[string]blockchain.Chain) *
 		wallet:       wallet.NewService(walletRepo, keyManagerSvc),
 		keyManager:   keyManagerSvc,
 		transaction:  transaction.NewService(transactionRepo, keyManagerSvc, blockchains),
-		deposit:      deposit.NewService(depositRepo, walletRepo, blockchains),
+		deposit:      deposit.NewService(depositRepo, walletRepo, keyManagerSvc, blockchains),
 		withdrawal:   withdrawal.NewService(withdrawalRepo, walletRepo, keyManagerSvc, riskControlSvc, blockchains),
 		asset:        asset.NewService(assetRepo),
 		riskControl:  riskControlSvc,

@@ -68,10 +68,18 @@ func (c *Client) callRPC(method string, params []interface{}) (json.RawMessage, 
 // GetName 获取链名称
 func (c *Client) GetName() string { return "bitcoin" }
 
-// GetBalance TODO: implement
+// GetBalance 获取地址余额（使用 getreceivedbyaddress，返回 BTC 单位字符串）
 func (c *Client) GetBalance(address string) (string, error) {
-	// Not implemented: requires address index or wallet.
-	return "0", nil
+	// getreceivedbyaddress returns total amount received by address in BTC
+	res, err := c.callRPC("getreceivedbyaddress", []interface{}{address, 0})
+	if err != nil {
+		return "0", err
+	}
+	var amount float64
+	if err := json.Unmarshal(res, &amount); err != nil {
+		return "0", err
+	}
+	return fmt.Sprintf("%f", amount), nil
 }
 
 // GetTokenBalance Bitcoin 无 token

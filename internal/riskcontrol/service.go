@@ -175,9 +175,37 @@ func (s *service) evaluateRule(rule *RiskRule, amount decimal.Decimal, userID ui
 			}
 		}
 	case RuleTypeFrequencyLimit:
-		// TODO: 实现频率限制检查
+		// condition: {"interval_minutes":10, "max_count":5}
+		interval := 10
+		maxCount := 5
+		if v, ok := condition["interval_minutes"].(float64); ok {
+			interval = int(v)
+		}
+		if v, ok := condition["max_count"].(float64); ok {
+			maxCount = int(v)
+		}
+
+		logs, err := s.repo.ListRiskLogsByUserID(userID, 100)
+		if err != nil {
+			logger.Warnf("failed to list risk logs for user %d: %v", userID, err)
+			return false, ""
+		}
+		cutoff := time.Now().Add(-time.Duration(interval) * time.Minute)
+		count := 0
+		for _, l := range logs {
+			if l.CreatedAt.After(cutoff) {
+				count++
+			}
+		}
+		if count >= maxCount {
+			return true, rule.Action
+		}
 	case RuleTypeKYCRequired:
-		// TODO: 实现KYC检查
+		// condition: {"required_level":2}
+		// We don't have direct account KYC here; conservatively require manual review
+		if _, ok := condition["required_level"]; ok {
+			return true, rule.Action
+		}
 	}
 
 	return false, ""

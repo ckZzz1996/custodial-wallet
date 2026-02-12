@@ -2,6 +2,9 @@ package notification
 
 import (
 	"bytes"
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"html/template"
@@ -284,15 +287,15 @@ func (s *service) renderTemplate(tmpl *NotificationTemplate, data map[string]int
 
 // SendEmail 发送邮件
 func (s *service) SendEmail(to, subject, content string) error {
-	// TODO: 实现邮件发送
-	logger.Infof("Sending email to %s: %s", to, subject)
+	// Minimal implementation: log and return nil
+	logger.Infof("(Email) to=%s subject=%s", to, subject)
 	return nil
 }
 
 // SendSMS 发送短信
 func (s *service) SendSMS(phone, content string) error {
-	// TODO: 实现短信发送
-	logger.Infof("Sending SMS to %s", phone)
+	// Minimal implementation: log and return nil
+	logger.Infof("(SMS) to=%s content=%s", phone, content)
 	return nil
 }
 
@@ -343,7 +346,11 @@ func (s *service) sendWebhookRequest(webhook *WebhookConfig, payload []byte) {
 
 	req.Header.Set("Content-Type", "application/json")
 	if webhook.Secret != "" {
-		// TODO: 添加签名
+		// HMAC-SHA256 signature
+		h := hmac.New(sha256.New, []byte(webhook.Secret))
+		h.Write(payload)
+		sig := hex.EncodeToString(h.Sum(nil))
+		req.Header.Set("X-Signature", sig)
 	}
 
 	// 添加自定义头

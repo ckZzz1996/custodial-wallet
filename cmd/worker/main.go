@@ -112,7 +112,7 @@ func initServices(cfg *config.Config, blockchains map[string]blockchain.Chain) *
 	riskControlSvc := riskcontrol.NewService(riskControlRepo)
 
 	return &workerServices{
-		deposit:      deposit.NewService(depositRepo, walletRepo, blockchains),
+		deposit:      deposit.NewService(depositRepo, walletRepo, keyManagerSvc, blockchains),
 		withdrawal:   withdrawal.NewService(withdrawalRepo, walletRepo, keyManagerSvc, riskControlSvc, blockchains),
 		transaction:  transaction.NewService(transactionRepo, keyManagerSvc, blockchains),
 		notification: notification.NewService(notificationRepo),

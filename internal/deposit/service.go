@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"custodial-wallet/internal/blockchain"
+	"custodial-wallet/internal/keymanager"
 	"custodial-wallet/internal/wallet"
 	"custodial-wallet/pkg/logger"
 
@@ -50,6 +51,7 @@ type Service interface {
 type service struct {
 	repo                  Repository
 	walletRepo            wallet.Repository
+	keyManager            keymanager.Service
 	blockchains           map[string]blockchain.Chain
 	confirmationsRequired map[string]int
 }
@@ -58,6 +60,7 @@ type service struct {
 func NewService(
 	repo Repository,
 	walletRepo wallet.Repository,
+	keyManager keymanager.Service,
 	blockchains map[string]blockchain.Chain,
 ) Service {
 	confirmations := make(map[string]int)
@@ -68,6 +71,7 @@ func NewService(
 	return &service{
 		repo:                  repo,
 		walletRepo:            walletRepo,
+		keyManager:            keyManager,
 		blockchains:           blockchains,
 		confirmationsRequired: confirmations,
 	}
@@ -467,9 +471,48 @@ func (s *service) ProcessSweepTasks(chainName string) error {
 		return err
 	}
 
+	chain, ok := s.blockchains[chainName]
+	if !ok {
+		return errors.New("unsupported chain")
+	}
+
 	for _, task := range tasks {
-		// TODO: 实现归集交易
 		logger.Infof("Processing sweep task %d", task.ID)
+		// 构建交易（from -> to）
+		raw, err := chain.BuildTransaction(task.FromAddress, task.ToAddress, task.Amount, task.Currency)
+		if err != nil {
+			task.Status = 2
+			task.ErrorMsg = err.Error()
+			_ = s.repo.UpdateSweepTask(task)
+			logger.Errorf("failed to build sweep tx for task %d: %v", task.ID, err)
+			continue
+		}
+
+		// 签名：使用 keyManager SignWithRequestID（requestID 可生成）
+		sig, err := s.keyManager.Sign(0, task.Chain, task.FromAddress, []byte(raw))
+		if err != nil {
+			task.Status = 2
+			task.ErrorMsg = err.Error()
+			_ = s.repo.UpdateSweepTask(task)
+			logger.Errorf("failed to sign sweep tx for task %d: %v", task.ID, err)
+			continue
+		}
+
+		// 广播
+		txHash, err := chain.BroadcastTransaction(string(sig))
+		if err != nil {
+			task.Status = 2
+			task.ErrorMsg = err.Error()
+			_ = s.repo.UpdateSweepTask(task)
+			logger.Errorf("failed to broadcast sweep tx for task %d: %v", task.ID, err)
+			continue
+		}
+
+		// 更新任务
+		task.TxHash = txHash
+		task.Status = 1
+		_ = s.repo.UpdateSweepTask(task)
+		logger.Infof("Sweep task %d broadcasted: %s", task.ID, txHash)
 	}
 
 	return nil

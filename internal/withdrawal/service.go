@@ -2,6 +2,8 @@ package withdrawal
 
 import (
 	"errors"
+	"os"
+	"strings"
 	"time"
 
 	"custodial-wallet/internal/blockchain"
@@ -355,8 +357,22 @@ func (s *service) processWithdrawal(w *Withdrawal) error {
 	}
 
 	// 获取热钱包地址
-	// TODO: 从配置或热钱包管理获取
-	hotWalletAddress := ""
+	// 优先使用配置的热钱包环境变量 HOT_WALLET_<CHAIN>
+	hotWalletAddress := os.Getenv("HOT_WALLET_" + strings.ToUpper(w.Chain))
+	if hotWalletAddress == "" {
+		// 作为回退，尝试从钱包仓储中查找系统钱包
+		sysWallet, _ := s.walletRepo.GetAddressByAddress(wallet.Chain(w.Chain), "")
+		if sysWallet != nil {
+			hotWalletAddress = sysWallet.Address
+		}
+	}
+
+	if hotWalletAddress == "" {
+		w.Status = WithdrawalStatusFailed
+		w.ErrorMsg = "hot wallet not configured"
+		_ = s.repo.Update(w)
+		return errors.New("hot wallet not configured")
+	}
 
 	// 构建交易
 	rawTx, err := chain.BuildTransaction(hotWalletAddress, w.ToAddress, w.Amount, w.ContractAddress)

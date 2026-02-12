@@ -1,0 +1,480 @@
+syntax = "proto3";
+
+package wallet.v1;
+
+option go_package = "custodial-wallet/api/proto/wallet/v1;walletv1";
+
+import "google/protobuf/timestamp.proto";
+
+// ==================== Account Service ====================
+
+service AccountService {
+  // 用户注册
+  rpc Register(RegisterRequest) returns (RegisterResponse);
+  // 用户登录
+  rpc Login(LoginRequest) returns (LoginResponse);
+  // 获取用户信息
+  rpc GetProfile(GetProfileRequest) returns (GetProfileResponse);
+  // 更新用户信息
+  rpc UpdateProfile(UpdateProfileRequest) returns (UpdateProfileResponse);
+  // 修改密码
+  rpc ChangePassword(ChangePasswordRequest) returns (ChangePasswordResponse);
+  // 启用2FA
+  rpc Enable2FA(Enable2FARequest) returns (Enable2FAResponse);
+  // 验证2FA
+  rpc Verify2FA(Verify2FARequest) returns (Verify2FAResponse);
+  // 获取登录历史
+  rpc GetLoginHistory(GetLoginHistoryRequest) returns (GetLoginHistoryResponse);
+}
+
+message RegisterRequest {
+  string email = 1;
+  string password = 2;
+  string phone = 3;
+}
+
+message RegisterResponse {
+  User user = 1;
+}
+
+message LoginRequest {
+  string email = 1;
+  string password = 2;
+  string two_fa_code = 3;
+}
+
+message LoginResponse {
+  string token = 1;
+  int64 expires_at = 2;
+  User user = 3;
+}
+
+message GetProfileRequest {}
+
+message GetProfileResponse {
+  User user = 1;
+}
+
+message UpdateProfileRequest {
+  string phone = 1;
+}
+
+message UpdateProfileResponse {
+  User user = 1;
+}
+
+message ChangePasswordRequest {
+  string old_password = 1;
+  string new_password = 2;
+}
+
+message ChangePasswordResponse {}
+
+message Enable2FARequest {}
+
+message Enable2FAResponse {
+  string secret = 1;
+  string qr_code_url = 2;
+}
+
+message Verify2FARequest {
+  string code = 1;
+}
+
+message Verify2FAResponse {
+  bool success = 1;
+}
+
+message GetLoginHistoryRequest {
+  int32 limit = 1;
+}
+
+message GetLoginHistoryResponse {
+  repeated LoginHistory histories = 1;
+}
+
+message User {
+  uint64 id = 1;
+  string uuid = 2;
+  string email = 3;
+  string phone = 4;
+  int32 status = 5;
+  int32 kyc_status = 6;
+  int32 kyc_level = 7;
+  bool two_fa_enabled = 8;
+  google.protobuf.Timestamp last_login_at = 9;
+  string last_login_ip = 10;
+  google.protobuf.Timestamp created_at = 11;
+}
+
+message LoginHistory {
+  uint64 id = 1;
+  string ip = 2;
+  string user_agent = 3;
+  string device = 4;
+  string location = 5;
+  int32 status = 6;
+  google.protobuf.Timestamp created_at = 7;
+}
+
+// ==================== Wallet Service ====================
+
+service WalletService {
+  // 创建钱包
+  rpc CreateWallet(CreateWalletRequest) returns (CreateWalletResponse);
+  // 获取钱包
+  rpc GetWallet(GetWalletRequest) returns (GetWalletResponse);
+  // 列出钱包
+  rpc ListWallets(ListWalletsRequest) returns (ListWalletsResponse);
+  // 更新钱包
+  rpc UpdateWallet(UpdateWalletRequest) returns (UpdateWalletResponse);
+  // 删除钱包
+  rpc DeleteWallet(DeleteWalletRequest) returns (DeleteWalletResponse);
+  // 生成地址
+  rpc GenerateAddress(GenerateAddressRequest) returns (GenerateAddressResponse);
+  // 列出地址
+  rpc ListAddresses(ListAddressesRequest) returns (ListAddressesResponse);
+  // 获取充值地址
+  rpc GetDepositAddress(GetDepositAddressRequest) returns (GetDepositAddressResponse);
+  // 获取余额
+  rpc GetBalance(GetBalanceRequest) returns (GetBalanceResponse);
+  // 列出余额
+  rpc ListBalances(ListBalancesRequest) returns (ListBalancesResponse);
+}
+
+message CreateWalletRequest {
+  string name = 1;
+  int32 type = 2;
+}
+
+message CreateWalletResponse {
+  Wallet wallet = 1;
+}
+
+message GetWalletRequest {
+  uint64 id = 1;
+  string uuid = 2;
+}
+
+message GetWalletResponse {
+  Wallet wallet = 1;
+}
+
+message ListWalletsRequest {}
+
+message ListWalletsResponse {
+  repeated Wallet wallets = 1;
+}
+
+message UpdateWalletRequest {
+  uint64 id = 1;
+  string name = 2;
+}
+
+message UpdateWalletResponse {
+  Wallet wallet = 1;
+}
+
+message DeleteWalletRequest {
+  uint64 id = 1;
+}
+
+message DeleteWalletResponse {}
+
+message GenerateAddressRequest {
+  uint64 wallet_id = 1;
+  string chain = 2;
+  string label = 3;
+}
+
+message GenerateAddressResponse {
+  Address address = 1;
+}
+
+message ListAddressesRequest {
+  uint64 wallet_id = 1;
+}
+
+message ListAddressesResponse {
+  repeated Address addresses = 1;
+}
+
+message GetDepositAddressRequest {
+  string chain = 1;
+}
+
+message GetDepositAddressResponse {
+  Address address = 1;
+}
+
+message GetBalanceRequest {
+  string chain = 1;
+  string currency = 2;
+}
+
+message GetBalanceResponse {
+  Balance balance = 1;
+}
+
+message ListBalancesRequest {}
+
+message ListBalancesResponse {
+  repeated Balance balances = 1;
+}
+
+message Wallet {
+  uint64 id = 1;
+  string uuid = 2;
+  uint64 user_id = 3;
+  string name = 4;
+  int32 type = 5;
+  int32 status = 6;
+  google.protobuf.Timestamp created_at = 7;
+  repeated Address addresses = 8;
+}
+
+message Address {
+  uint64 id = 1;
+  string uuid = 2;
+  uint64 wallet_id = 3;
+  string chain = 4;
+  string address = 5;
+  string label = 6;
+  string derivation_path = 7;
+  int32 type = 8;
+  int32 status = 9;
+  google.protobuf.Timestamp created_at = 10;
+}
+
+message Balance {
+  uint64 id = 1;
+  uint64 wallet_id = 2;
+  string chain = 3;
+  string currency = 4;
+  string contract_address = 5;
+  string available = 6;
+  string frozen = 7;
+  string pending = 8;
+  google.protobuf.Timestamp updated_at = 9;
+}
+
+// ==================== Deposit Service ====================
+
+service DepositService {
+  // 获取充值记录
+  rpc GetDeposit(GetDepositRequest) returns (GetDepositResponse);
+  // 列出充值记录
+  rpc ListDeposits(ListDepositsRequest) returns (ListDepositsResponse);
+  // 分配充值地址
+  rpc AllocateDepositAddress(AllocateDepositAddressRequest) returns (AllocateDepositAddressResponse);
+  // 列出充值地址
+  rpc ListDepositAddresses(ListDepositAddressesRequest) returns (ListDepositAddressesResponse);
+}
+
+message GetDepositRequest {
+  uint64 id = 1;
+  string uuid = 2;
+}
+
+message GetDepositResponse {
+  Deposit deposit = 1;
+}
+
+message ListDepositsRequest {
+  int32 page = 1;
+  int32 page_size = 2;
+  string chain = 3;
+  string currency = 4;
+}
+
+message ListDepositsResponse {
+  repeated Deposit deposits = 1;
+  int64 total = 2;
+  int32 page = 3;
+  int32 page_size = 4;
+}
+
+message AllocateDepositAddressRequest {
+  string chain = 1;
+}
+
+message AllocateDepositAddressResponse {
+  DepositAddress address = 1;
+}
+
+message ListDepositAddressesRequest {}
+
+message ListDepositAddressesResponse {
+  repeated DepositAddress addresses = 1;
+}
+
+message Deposit {
+  uint64 id = 1;
+  string uuid = 2;
+  uint64 user_id = 3;
+  string chain = 4;
+  string tx_hash = 5;
+  string from_address = 6;
+  string to_address = 7;
+  string currency = 8;
+  string amount = 9;
+  string fee = 10;
+  int32 status = 11;
+  int32 confirmations = 12;
+  uint64 block_number = 13;
+  google.protobuf.Timestamp created_at = 14;
+  google.protobuf.Timestamp credited_at = 15;
+}
+
+message DepositAddress {
+  uint64 id = 1;
+  uint64 user_id = 2;
+  string chain = 3;
+  string address = 4;
+  string label = 5;
+  int32 status = 6;
+  google.protobuf.Timestamp created_at = 7;
+}
+
+// ==================== Withdrawal Service ====================
+
+service WithdrawalService {
+  // 创建提现
+  rpc CreateWithdrawal(CreateWithdrawalRequest) returns (CreateWithdrawalResponse);
+  // 获取提现
+  rpc GetWithdrawal(GetWithdrawalRequest) returns (GetWithdrawalResponse);
+  // 列出提现
+  rpc ListWithdrawals(ListWithdrawalsRequest) returns (ListWithdrawalsResponse);
+  // 取消提现
+  rpc CancelWithdrawal(CancelWithdrawalRequest) returns (CancelWithdrawalResponse);
+}
+
+message CreateWithdrawalRequest {
+  string chain = 1;
+  string to_address = 2;
+  string currency = 3;
+  string amount = 4;
+  string contract_address = 5;
+  string memo = 6;
+}
+
+message CreateWithdrawalResponse {
+  Withdrawal withdrawal = 1;
+}
+
+message GetWithdrawalRequest {
+  uint64 id = 1;
+  string uuid = 2;
+}
+
+message GetWithdrawalResponse {
+  Withdrawal withdrawal = 1;
+}
+
+message ListWithdrawalsRequest {
+  int32 page = 1;
+  int32 page_size = 2;
+  string chain = 3;
+  string currency = 4;
+  int32 status = 5;
+}
+
+message ListWithdrawalsResponse {
+  repeated Withdrawal withdrawals = 1;
+  int64 total = 2;
+  int32 page = 3;
+  int32 page_size = 4;
+}
+
+message CancelWithdrawalRequest {
+  uint64 id = 1;
+}
+
+message CancelWithdrawalResponse {}
+
+message Withdrawal {
+  uint64 id = 1;
+  string uuid = 2;
+  uint64 user_id = 3;
+  string chain = 4;
+  string tx_hash = 5;
+  string from_address = 6;
+  string to_address = 7;
+  string currency = 8;
+  string amount = 9;
+  string fee = 10;
+  int32 status = 11;
+  int32 risk_level = 12;
+  bool manual_review = 13;
+  int32 confirmations = 14;
+  string memo = 15;
+  string error_msg = 16;
+  google.protobuf.Timestamp created_at = 17;
+  google.protobuf.Timestamp completed_at = 18;
+}
+
+// ==================== Asset Service ====================
+
+service AssetService {
+  // 列出资产
+  rpc ListAssets(ListAssetsRequest) returns (ListAssetsResponse);
+  // 获取用户资产
+  rpc GetUserAssets(GetUserAssetsRequest) returns (GetUserAssetsResponse);
+  // 获取资产价格
+  rpc GetAssetPrice(GetAssetPriceRequest) returns (GetAssetPriceResponse);
+}
+
+message ListAssetsRequest {
+  string chain = 1;
+}
+
+message ListAssetsResponse {
+  repeated Asset assets = 1;
+}
+
+message GetUserAssetsRequest {}
+
+message GetUserAssetsResponse {
+  repeated UserAssetDetail assets = 1;
+  string total_value_usd = 2;
+}
+
+message GetAssetPriceRequest {
+  string symbol = 1;
+}
+
+message GetAssetPriceResponse {
+  AssetPrice price = 1;
+}
+
+message Asset {
+  uint64 id = 1;
+  string chain = 2;
+  string symbol = 3;
+  string name = 4;
+  string contract_address = 5;
+  int32 decimals = 6;
+  string type = 7;
+  string icon_url = 8;
+  bool deposit_enabled = 9;
+  bool withdraw_enabled = 10;
+  int32 status = 11;
+}
+
+message AssetPrice {
+  string symbol = 1;
+  string price_usd = 2;
+  string price_btc = 3;
+  string change_24h = 4;
+  string volume_24h = 5;
+  google.protobuf.Timestamp updated_at = 6;
+}
+
+message UserAssetDetail {
+  Asset asset = 1;
+  string available = 2;
+  string frozen = 3;
+  string pending = 4;
+  string value_usd = 5;
+}
+

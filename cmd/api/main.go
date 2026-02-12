@@ -204,10 +204,11 @@ func initBlockchains(cfg *config.Config) map[string]blockchain.Chain {
 	}
 
 	// BSC (EVM compatible)
-	bscClient, err := ethereum.NewClient(
+	bscClient, err := ethereum.NewClientWithName(
 		cfg.Blockchain.BSC.RPCURL,
 		cfg.Blockchain.BSC.ChainID,
 		cfg.Blockchain.BSC.Confirmations,
+		"bsc",
 	)
 	if err != nil {
 		logger.Warnf("Failed to initialize BSC client: %v", err)
@@ -216,10 +217,11 @@ func initBlockchains(cfg *config.Config) map[string]blockchain.Chain {
 	}
 
 	// Polygon (EVM compatible)
-	polygonClient, err := ethereum.NewClient(
+	polygonClient, err := ethereum.NewClientWithName(
 		cfg.Blockchain.Polygon.RPCURL,
 		cfg.Blockchain.Polygon.ChainID,
 		cfg.Blockchain.Polygon.Confirmations,
+		"polygon",
 	)
 	if err != nil {
 		logger.Warnf("Failed to initialize Polygon client: %v", err)

@@ -20,10 +20,16 @@ type Client struct {
 	client        *ethclient.Client
 	chainID       *big.Int
 	confirmations int
+	name          string
 }
 
-// NewClient 创建以太坊客户端
+// NewClient 创建以太坊客户端 (默认 name = "ethereum")
 func NewClient(rpcURL string, chainID int64, confirmations int) (*Client, error) {
+	return NewClientWithName(rpcURL, chainID, confirmations, "ethereum")
+}
+
+// NewClientWithName 创建以太坊兼容链客户端，允许指定链名称（例如: bsc, polygon）
+func NewClientWithName(rpcURL string, chainID int64, confirmations int, name string) (*Client, error) {
 	client, err := ethclient.Dial(rpcURL)
 	if err != nil {
 		return nil, err
@@ -33,11 +39,15 @@ func NewClient(rpcURL string, chainID int64, confirmations int) (*Client, error)
 		client:        client,
 		chainID:       big.NewInt(chainID),
 		confirmations: confirmations,
+		name:          name,
 	}, nil
 }
 
 // GetName 获取链名称
 func (c *Client) GetName() string {
+	if c.name != "" {
+		return c.name
+	}
 	return "ethereum"
 }
 

@@ -54,9 +54,11 @@ type BlockchainConfig struct {
 	Ethereum EthereumConfig
 	Bitcoin  BitcoinConfig
 	Tron     TronConfig
+	BSC      EthereumConfig
+	Polygon  EthereumConfig
 }
 
-// EthereumConfig 以太坊配置
+// EthereumConfig 以太坊兼容链配置
 type EthereumConfig struct {
 	RPCURL             string
 	ChainID            int64
@@ -129,6 +131,18 @@ func Load() *Config {
 				APIKey:        getEnv("TRON_API_KEY", ""),
 				Network:       getEnv("TRON_NETWORK", "mainnet"),
 				Confirmations: getEnvInt("TRON_CONFIRMATIONS", 19),
+			},
+			BSC: EthereumConfig{
+				RPCURL:             getEnv("BSC_RPC_URL", "https://bsc-dataseed.binance.org/"),
+				ChainID:            int64(getEnvInt("BSC_CHAIN_ID", 56)),
+				Confirmations:      getEnvInt("BSC_CONFIRMATIONS", 15),
+				GasLimitMultiplier: 1.2,
+			},
+			Polygon: EthereumConfig{
+				RPCURL:             getEnv("POLYGON_RPC_URL", "https://polygon-rpc.com/"),
+				ChainID:            int64(getEnvInt("POLYGON_CHAIN_ID", 137)),
+				Confirmations:      getEnvInt("POLYGON_CONFIRMATIONS", 128),
+				GasLimitMultiplier: 1.2,
 			},
 		},
 	}

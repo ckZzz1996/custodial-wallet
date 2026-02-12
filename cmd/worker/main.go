@@ -84,7 +84,32 @@ func initBlockchains(cfg *config.Config) map[string]blockchain.Chain {
 	if err != nil {
 		logger.Warnf("Failed to initialize Ethereum client: %v", err)
 	} else {
-		chains["ethereum"] = ethClient
+		ch := ethClient
+		chains["ethereum"] = ch
+	}
+
+	// BSC
+	bscClient, err := ethereum.NewClient(
+		cfg.Blockchain.BSC.RPCURL,
+		cfg.Blockchain.BSC.ChainID,
+		cfg.Blockchain.BSC.Confirmations,
+	)
+	if err != nil {
+		logger.Warnf("Failed to initialize BSC client: %v", err)
+	} else {
+		chains["bsc"] = bscClient
+	}
+
+	// Polygon
+	polygonClient, err := ethereum.NewClient(
+		cfg.Blockchain.Polygon.RPCURL,
+		cfg.Blockchain.Polygon.ChainID,
+		cfg.Blockchain.Polygon.Confirmations,
+	)
+	if err != nil {
+		logger.Warnf("Failed to initialize Polygon client: %v", err)
+	} else {
+		chains["polygon"] = polygonClient
 	}
 
 	return chains
@@ -130,7 +155,7 @@ func runDepositScanner(ctx context.Context, svc deposit.Service) {
 			return
 		case <-ticker.C:
 			// 扫描各链的充值
-			chains := []string{"ethereum", "bitcoin", "tron"}
+			chains := []string{"ethereum", "bitcoin", "tron", "bsc", "polygon"}
 			for _, chain := range chains {
 				if err := svc.ScanDeposits(chain); err != nil {
 					logger.Errorf("Failed to scan deposits for %s: %v", chain, err)
